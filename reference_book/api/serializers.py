@@ -9,6 +9,24 @@ from .models import Employee, Organization, Phone, PERSONAL
 User = get_user_model()
 
 
+class UserCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['email', 'password']
+
+
+class UserInfoSerializer(serializers.ModelSerializer):
+    can_modify = serializers.SlugRelatedField(
+        slug_field='name',
+        read_only=True,
+        many=True
+    )
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'can_modify']
+
+
 class PhoneSerialiser(serializers.ModelSerializer):
     class Meta:
         model = Phone

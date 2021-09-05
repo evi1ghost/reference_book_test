@@ -9,7 +9,9 @@ from .views import (
     OrganizationCRUDViewSet,
     OrganizationListViewSet,
     EmployeeViewSet,
-    PhoneCRUDViewSet
+    PhoneCRUDViewSet,
+    CreateUserViewSet,
+    UserInfoViewSet,
 )
 
 
@@ -34,6 +36,16 @@ router_1.register(
     r'organizations/(?P<org_id>[\d]+)/employees/(?P<emp_id>[\d]+)/phones',
     PhoneCRUDViewSet,
     basename='phones'
+)
+router_1.register(
+    'users',
+    CreateUserViewSet,
+    basename='user-create'
+)
+router_1.register(
+    'users',
+    UserInfoViewSet,
+    basename='user-info'
 )
 
 auth_urlpatterns = [

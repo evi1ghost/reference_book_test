@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.decorators import action
@@ -10,6 +11,8 @@ from .serializers import (
     OrganizationCRUDSerializer,
     OrganizationListSerializer,
     PhoneSerialiser,
+    UserCreateSerializer,
+    UserInfoSerializer
 )
 from .pagination import ResultsSetPagination
 from .permissions import (
@@ -17,6 +20,43 @@ from .permissions import (
     IsOwnerOrModifier,
     IsOwner
 )
+from .utils import set_username
+
+
+User = get_user_model()
+
+
+class CreateUserViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
+    queryset = User.objects.all()
+    serializer_class = UserCreateSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def perform_create(self, serializer):
+        username = set_username(serializer.validated_data['email'])
+        User.objects.create_user(
+            username=username, **serializer.validated_data
+        )
+
+
+class UserInfoViewSet(viewsets.GenericViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserInfoSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    @action(
+        methods=['patch', 'get'], detail=False,
+        url_path='me', url_name='me'
+    )
+    def me(self, request, *args, **kwargs):
+        user = self.request.user
+        serializer = self.get_serializer(user)
+        if not self.request.method == 'PATCH':
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = self.get_serializer(
+            user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(partial=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class OrganizationListViewSet(viewsets.GenericViewSet,
@@ -92,6 +132,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 class PhoneCRUDViewSet(viewsets.ModelViewSet):
     serializer_class = PhoneSerialiser
     permission_classes = [IsOwnerOrModifier]
+    pagination_class = ResultsSetPagination
 
     def get_queryset(self):
         employee = get_object_or_404(
