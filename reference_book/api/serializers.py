@@ -1,33 +1,11 @@
-# from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model
 from django.db.models import Q
-from rest_framework import serializers
-# from rest_framework_simplejwt.serializers import TokenObtainSerializer
-# from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import permissions, serializers
 
 from .models import Employee, Organization, Phone
 
 
-# User = get_user_model()
-
-
-# class EmailTokenObtainSerializer(TokenObtainSerializer):
-#     username_field = User.EMAIL_FIELD
-
-
-# class CustomTokenObtainPairSerializer(EmailTokenObtainSerializer):
-#     @classmethod
-#     def get_token(cls, user):
-#         return RefreshToken.for_user(user)
-
-#     def validate(self, attrs):
-#         data = super().validate(attrs)
-
-#         refresh = self.get_token(self.user)
-
-#         data["refresh"] = str(refresh)
-#         data["access"] = str(refresh.access_token)
-
-#         return data
+User = get_user_model()
 
 
 class PhoneSerialiser(serializers.ModelSerializer):
@@ -44,7 +22,9 @@ class EmployeeSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'position', 'phones')
 
 
-class OrganizationListSerializer(serializers.HyperlinkedModelSerializer):
+class OrganizationListSerializer(serializers.ModelSerializer):
+
+    employees = serializers.SerializerMethodField()
 
     def __init__(self, *args, **kwargs):
         """Dynamic fields definition"""
@@ -53,8 +33,6 @@ class OrganizationListSerializer(serializers.HyperlinkedModelSerializer):
         search = self.context['request'].query_params.get('q')
         if not search:
             self.fields.pop('employees')
-
-    employees = serializers.SerializerMethodField()
 
     def get_employees(self, obj):
         search = self.context['request'].query_params.get('q')
@@ -69,9 +47,21 @@ class OrganizationListSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('id', 'name', 'description', 'employees',)
 
 
+class OrganizationCRUDSerializer(serializers.ModelSerializer):
+    modifiers = serializers.SlugRelatedField(
+        queryset=User.objects.all(),
+        slug_field='email',
+        many=True
+    )
+
+    class Meta:
+        model = Organization
+        fields = ('id', 'name', 'description', 'modifiers',)
+
+
 class OrganizationDetailSerializer(serializers.ModelSerializer):
     employees = EmployeeSerializer(many=True)
 
     class Meta:
         model = Organization
-        fields = ('id', 'name', 'description', 'employees')
+        fields = ('id', 'name', 'description', 'modifiers', 'employees')
