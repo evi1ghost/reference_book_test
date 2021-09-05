@@ -1,8 +1,9 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
-from rest_framework import permissions, serializers
+from rest_framework import serializers
 
-from .models import Employee, Organization, Phone
+from .models import Employee, Organization, Phone, PERSONAL
 
 
 User = get_user_model()
@@ -13,9 +14,25 @@ class PhoneSerialiser(serializers.ModelSerializer):
         model = Phone
         fields = ('id', 'phone_type', 'phone_number',)
 
+    def validate(self, data):
+        kwargs = self.context['view'].kwargs
+        try:
+            dublicate = Phone.objects.get(
+                phone_number=data['phone_number'],
+                phone_type=PERSONAL
+            )
+            if dublicate and dublicate.id != kwargs.get('pk'):
+                raise serializers.ValidationError(
+                    'Данный номер искользуется в качестве'
+                    'личного иным сотрудником'
+                )
+        except ObjectDoesNotExist:
+            pass
+        return data
+
 
 class EmployeeSerializer(serializers.ModelSerializer):
-    phones = PhoneSerialiser(many=True)
+    phones = PhoneSerialiser(many=True, read_only=True)
 
     class Meta:
         model = Employee

@@ -9,9 +9,14 @@ from .serializers import (
     EmployeeSerializer,
     OrganizationCRUDSerializer,
     OrganizationListSerializer,
+    PhoneSerialiser,
 )
 from .pagination import ResultsSetPagination
-from .permissions import IsOwnerOrReadOnly, IsOwner
+from .permissions import (
+    IsOwnerOrModifierOrReadOnly,
+    IsOwnerOrModifier,
+    IsOwner
+)
 
 
 class OrganizationListViewSet(viewsets.GenericViewSet,
@@ -61,11 +66,43 @@ class OrganizationCRUDViewSet(viewsets.GenericViewSet,
 
 class EmployeeViewSet(viewsets.ModelViewSet):
     serializer_class = EmployeeSerializer
+    permission_classes = [IsOwnerOrModifierOrReadOnly]
+    pagination_class = ResultsSetPagination
+    filter_backends = [CustomSearchFilter]
+    search_fields = [
+        'name',
+        'position',
+        'phones__phone_number'
+    ]
 
     def get_queryset(self):
-        org_id = self.kwargs['org_id']
         organization = get_object_or_404(
             Organization.objects.prefetch_related('employees'),
-            id=org_id
+            id=self.kwargs['org_id']
         )
         return organization.employees.all()
+
+    def perform_create(self, serializer):
+        organization = get_object_or_404(
+            Organization, id=self.kwargs['org_id']
+        )
+        serializer.save(organization=organization)
+
+
+class PhoneCRUDViewSet(viewsets.ModelViewSet):
+    serializer_class = PhoneSerialiser
+    permission_classes = [IsOwnerOrModifier]
+
+    def get_queryset(self):
+        employee = get_object_or_404(
+            Employee.objects.prefetch_related('phones'),
+            id=self.kwargs['emp_id'], organization_id=self.kwargs['org_id']
+        )
+        return employee.phones.all()
+
+    def perform_create(self, serializer):
+        employee = get_object_or_404(
+            Employee.objects.prefetch_related('phones'),
+            id=self.kwargs['emp_id'], organization_id=self.kwargs['org_id']
+        )
+        serializer.save(employee=employee)

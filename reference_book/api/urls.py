@@ -8,7 +8,8 @@ from rest_framework_simplejwt.views import (
 from .views import (
     OrganizationCRUDViewSet,
     OrganizationListViewSet,
-    EmployeeViewSet
+    EmployeeViewSet,
+    PhoneCRUDViewSet
 )
 
 
@@ -28,6 +29,11 @@ router_1.register(
     r'organizations/(?P<org_id>[\d]+)/employees',
     EmployeeViewSet,
     basename='employees'
+)
+router_1.register(
+    r'organizations/(?P<org_id>[\d]+)/employees/(?P<emp_id>[\d]+)/phones',
+    PhoneCRUDViewSet,
+    basename='phones'
 )
 
 auth_urlpatterns = [
