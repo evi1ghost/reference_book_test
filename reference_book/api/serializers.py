@@ -31,6 +31,9 @@ class PhoneSerialiser(serializers.ModelSerializer):
     class Meta:
         model = Phone
         fields = ('id', 'phone_type', 'phone_number',)
+        extra_kwargs = {
+            'phone_type': {'required': True}
+        }
 
     def validate(self, data):
         kwargs = self.context['view'].kwargs
@@ -50,7 +53,32 @@ class PhoneSerialiser(serializers.ModelSerializer):
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
-    phones = PhoneSerialiser(many=True, read_only=True)
+    phones = PhoneSerialiser(many=True)
+
+    def validate(self, data):
+        kwargs = self.context['view'].kwargs
+        name = data.get('name')
+        if name:
+            try:
+                dublicate = Employee.objects.get(
+                    name=name,
+                    organization_id=kwargs['org_id']
+                )
+                if dublicate and dublicate.id != kwargs.get('pk'):
+                    raise serializers.ValidationError(
+                        'Сотрудник с таким ФИО уже существует'
+                    )
+            except ObjectDoesNotExist:
+                pass
+        return super().validate(data)
+
+    def create(self, validated_data):
+        phone_data = validated_data.pop('phones')
+        employee = Employee.objects.create(**validated_data)
+        Phone.objects.create(employee=employee, **phone_data[0])
+        return employee
+
+    # update не успел переопределить :-(
 
     class Meta:
         model = Employee
