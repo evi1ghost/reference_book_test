@@ -8,7 +8,7 @@ from rest_framework_simplejwt.views import (
 from .views import (
     OrganizationCRUDViewSet,
     OrganizationListViewSet,
-    EmployeeWithoutUpdateViewSet,
+    EmployeeViewSet,
     PhoneCRUDViewSet,
     CreateUserViewSet,
     UserInfoViewSet,
@@ -29,7 +29,7 @@ router_1.register(
 )
 router_1.register(
     r'organizations/(?P<org_id>[\d]+)/employees',
-    EmployeeWithoutUpdateViewSet,
+    EmployeeViewSet,
     basename='employees'
 )
 router_1.register(

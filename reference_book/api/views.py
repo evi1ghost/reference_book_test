@@ -104,11 +104,7 @@ class OrganizationCRUDViewSet(viewsets.GenericViewSet,
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class EmployeeWithoutUpdateViewSet(viewsets.GenericViewSet,
-                                   mixins.ListModelMixin,
-                                   mixins.CreateModelMixin,
-                                   mixins.RetrieveModelMixin,
-                                   mixins.DestroyModelMixin):
+class EmployeeViewSet(viewsets.ModelViewSet):
     serializer_class = EmployeeSerializer
     permission_classes = [IsOwnerOrModifierOrReadOnly]
     pagination_class = ResultsSetPagination
