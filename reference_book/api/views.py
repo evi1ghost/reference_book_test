@@ -61,7 +61,7 @@ class UserInfoViewSet(viewsets.GenericViewSet):
 
 class OrganizationListViewSet(viewsets.GenericViewSet,
                               mixins.ListModelMixin):
-    """ListViewSet for Organization with /search endpoint"""
+    """List of organization with /search endpoint"""
     queryset = Organization.objects.all()
     serializer_class = OrganizationListSerializer
     pagination_class = ResultsSetPagination
