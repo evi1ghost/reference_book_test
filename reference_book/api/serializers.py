@@ -40,36 +40,37 @@ class PhoneSerialiser(serializers.ModelSerializer):
         Check if phone from data already used as personal and prevent from
         using work number as a personal
         """
-        try:
-            existing_phone = None
-            existing_phone_pk = self.context['view'].kwargs.get('pk')
-            if existing_phone_pk:
+        existing_phone = None
+        existing_phone_pk = self.context['view'].kwargs.get('pk')
+        if existing_phone_pk:
+            try:
                 existing_phone = Phone.objects.get(pk=existing_phone_pk)
-            new_number = (
-                data.get('phone_number') or existing_phone.phone_number
-            )
-            dublicate = Phone.objects.filter(phone_number=new_number)
-            if (
-                # номер встречается более 1 раза, значит не персональный -
-                # можем создать такой же неперсональный номер:
-                len(dublicate) > 1 and data.get('phone_type') != PERSONAL
-                # номер встречается 1 раз и принадлежит текущему сотруднику
-                # тип запроса patch или put поскольку в url есть pk:
-                or len(dublicate) == 1 and dublicate[0] == existing_phone
-                # номер встречается 1 раз и он не персональный - не пытаемся
-                # создать такой же персональный номер:
-                or len(dublicate) == 1 and dublicate[0].phone_type != PERSONAL
-                and data.get('phone_type') != PERSONAL
-            ):
-                return data
-            raise serializers.ValidationError(
-                'Данный номер искользуется в качестве личного иным'
-                ' сотрудником либо вы пытаетесь сохранить рабочий номер'
-                ' в качестве личного'
-            )
-        except ObjectDoesNotExist:
-            pass
-        return data
+            except ObjectDoesNotExist:
+                pass
+        new_number = (
+            data.get('phone_number') or existing_phone.phone_number
+        )
+        dublicate = Phone.objects.filter(phone_number=new_number)
+        if (
+            # добавляемый номер не существует:
+            not dublicate
+            # номер встречается более 1 раза, значит не персональный -
+            # можем создать такой же неперсональный номер:
+            or len(dublicate) > 1 and data.get('phone_type') != PERSONAL
+            # номер встречается 1 раз и принадлежит текущему сотруднику
+            # тип запроса patch или put поскольку в url есть pk:
+            or len(dublicate) == 1 and dublicate[0] == existing_phone
+            # номер встречается 1 раз и он не персональный - не пытаемся
+            # создать такой же персональный номер:
+            or len(dublicate) == 1 and dublicate[0].phone_type != PERSONAL
+            and data.get('phone_type') != PERSONAL
+        ):
+            return data
+        raise serializers.ValidationError(
+            'Данный номер искользуется в качестве личного иным'
+            ' сотрудником либо вы пытаетесь сохранить рабочий номер'
+            ' в качестве личного'
+        )
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
